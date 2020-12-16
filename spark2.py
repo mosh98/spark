@@ -43,48 +43,6 @@ print(train.count())
 print(dev.count())
 print(test.count())
 
-# TODO: Count the number of positive/negative instances in, respectively, train, dev and test
-# Print the class distribution for each to standard output
-# The class distribution should be specified as the % of positive examples
-# [FIX ME!] Write code below
-# from reducer import count
-print('positive/negative instances')
-print('Train instances')
-
-train.groupBy('class_label').count().show()
-result = train.filter(train.class_label == 1.0).collect()
-Train_postive = len(result)
-print("Train_postive ",Train_postive)
-result = train.filter(train.class_label == 0.0).collect()
-Train_negativ = len(result)
-print("Train_negativ ",Train_negativ)
-
-print("Train percentage ",(Train_postive/(Train_postive+Train_negativ))*100)
-
-print('Dev instances')
-dev.groupBy('class_label').count().show()
-dev_result = dev.filter(dev.class_label == 1.0).collect()
-dev_postive = len(dev_result)
-print("dev_postive ",dev_postive)
-
-dev_result = dev.filter(dev.class_label == 0.0).collect()
-dev_negativ = len(dev_result)
-print("dev_negativ ",dev_negativ)
-
-print("Dev percentage ",(dev_postive/(dev_postive+dev_negativ))*100)
-
-
-print('Test instances')
-test.groupBy('class_label').count().show()
-test_result = test.filter(test.class_label == 1.0).collect()
-test_positive = len(test_result)
-print("test_positive ",test_positive)
-test_result = test.filter(test.class_label == 0.0).collect()
-test_negativ = len(test_result)
-print("test_positive ",test_negativ)
-print("Test percentage ",(test_positive/(test_positive+test_negativ))*100)
-
-
 
 # TODO: Create a stopword list containing the 100 most frequent tokens in the training data
 # Hint: see below for how to convert a list of (word, frequency) tuples to a list of words
@@ -100,29 +58,29 @@ train.select("review").show()
 #x = train_sorted_frequencies[:100]
 #stopwords = [frequency_tuple[0] for frequency_tuple in x]
 #print(stopwords)
+
+
+#Ignore this===========List all words===========TEST
 from pyspark.sql.functions import split, explode
 trainWordSplits = (train.select(split(train.review, '\s+').alias('split')))
 singleWordDf = (trainWordSplits.select(explode(trainWordSplits.split).alias('word')))
 shakeWordsDF = singleWordDf.where(singleWordDf.word != " ")
-#print(shakeWordsDF.groupby("word"))
+shakeWordsDF.show()
 
 train_sorted_frequencies = shakeWordsDF.rdd.map(lambda word: (word, 1)).reduceByKey(lambda a, b: a + b).sortBy(lambda x: x[1], ascending = False).take(100)
-#x = train_sorted_frequencies[:100]
-#stopwords = [frequency_tuple[0] for frequency_tuple in x]
-stopwords = train_sorted_frequencies
-print(stopwords)
-
+x = train_sorted_frequencies[:100]
+stopwords = [frequency_tuple[0] for frequency_tuple in x]
 
 newList = []
-for x in stopwords:
-    newList.append(x[0].word)
 
-print(newList)
-print(len(newList))
+for x in stopwords:
+    newList.append(x.word)
+
+
 
 # TODO: Replace the [] in the stopWords parameter with the name of your created list
 # [FIX ME!] Modify code below
-remover = StopWordsRemover(inputCol='words', outputCol='words_filtered', stopWords=newList)
+remover = StopWordsRemover(inputCol='words', outputCol='words_filtered', stopWords=stopwords)
 
 # Remove stopwords from all three subsets
 train_filtered = remover.transform(train)
@@ -145,13 +103,19 @@ print(train_data.count())
 print(dev_data.count())
 print(test_data.count())
 
-# Create a TF-IDF representation of the data
-idf = IDF(inputCol='BoW', outputCol='TFIDF')
-idf_model = idf.fit(train_data)
-train_tfidf = idf_model.transform(train_data)
-dev_tfidf = idf_model.transform(dev_data)
-test_tfidf = idf_model.transform(test_data)
+"""
+df.rdd \
+  .filter(lambda x: x[1] == "france") \ # only french stations
+  .map(lambda x: (x[0], x[2])) \ # select station & temp
+  .mapValues(lambda x: (x, 1)) \ # generate count
+  .reduceByKey(lambda x, y: (x[0]+y[0], x[1]+y[1])) \ # calculate sum & count
+  .mapValues(lambda x: x[0]/x[1]) \ # calculate average
+  .sortBy(lambda x: x[1], ascending = False) \ # sort
+  .take(100)
+  """
+#test_result = test.filter(test.class_label == 0.0).collect()
+#lez = shakeWordsDF.filter(shakeWordsDF.word).collect()
+#print(lez)
 
 
-
-
+#Ignore this ===========List all words===========TEST
