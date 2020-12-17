@@ -100,22 +100,16 @@ train.select("review").show()
 #x = train_sorted_frequencies[:100]
 #stopwords = [frequency_tuple[0] for frequency_tuple in x]
 #print(stopwords)
-from pyspark.sql.functions import split, explode
-trainWordSplits = (train.select(split(train.review, '\s+').alias('split')))
-singleWordDf = (trainWordSplits.select(explode(trainWordSplits.split).alias('word')))
-shakeWordsDF = singleWordDf.where(singleWordDf.word != " ")
-#print(shakeWordsDF.groupby("word"))
 
-train_sorted_frequencies = shakeWordsDF.rdd.map(lambda word: (word, 1)).reduceByKey(lambda a, b: a + b).sortBy(lambda x: x[1], ascending = False).take(100)
-#x = train_sorted_frequencies[:100]
-#stopwords = [frequency_tuple[0] for frequency_tuple in x]
-stopwords = train_sorted_frequencies
+train_words = train.select("words")
+
+freq = train_words.rdd.flatMap(lambda a: [(w,1) for w in a.words]).reduceByKey(lambda a,b: a+b).sortBy(lambda x: x[1], ascending = False).take(100)
+
+stopwords = freq
 print(stopwords)
-
-
 newList = []
 for x in stopwords:
-    newList.append(x[0].word)
+    newList.append(x[0])
 
 print(newList)
 print(len(newList))
@@ -123,6 +117,7 @@ print(len(newList))
 # TODO: Replace the [] in the stopWords parameter with the name of your created list
 # [FIX ME!] Modify code below
 remover = StopWordsRemover(inputCol='words', outputCol='words_filtered', stopWords=newList)
+
 
 # Remove stopwords from all three subsets
 train_filtered = remover.transform(train)
@@ -152,6 +147,74 @@ train_tfidf = idf_model.transform(train_data)
 dev_tfidf = idf_model.transform(dev_data)
 test_tfidf = idf_model.transform(test_data)
 
+# ----- PART III: MODEL SELECTION -----
+
+# Provide information about class labels: needed for model fitting
+# Only needs to be defined once for all models (but included in all pipelines)
+label_indexer = StringIndexer(inputCol='class_label', outputCol='label')
+
+# Create an evaluator for binary classification
+# Only needs to be created once, can be reused for all evaluation
+evaluator = BinaryClassificationEvaluator()
+
+# Train a decision tree with default parameters (including maxDepth=5)
+dt_classifier_default = DecisionTreeClassifier(labelCol='label', featuresCol='TFIDF', maxDepth=5)
+
+# Create an ML pipeline for the decision tree model
+dt_pipeline_default = Pipeline(stages=[label_indexer, dt_classifier_default])
+
+# Apply pipeline and train model
+dt_model_default = dt_pipeline_default.fit(train_tfidf)
+
+# Apply model on devlopment data
+dt_predictions_default_dev = dt_model_default.transform(dev_tfidf)
+
+# Evaluate model using the AUC metric
+auc_dt_default_dev = evaluator.evaluate(dt_predictions_default_dev, {evaluator.metricName: 'areaUnderROC'})
+
+# Print result to standard output
+print('Decision Tree, Default Parameters, Development Set, AUC: ' + str(auc_dt_default_dev))
+
+# TODO: Check for signs of overfitting (by evaluating the model on the training set)
+# [FIX ME!] Write code below
+
+# TODO: Tune the decision tree model by changing one of its hyperparameters
+# Build and evalute decision trees with the following maxDepth values: 3 and 4.
+# [FIX ME!] Write code below
+
+# Train a random forest with default parameters (including numTrees=20)
+rf_classifier_default = RandomForestClassifier(labelCol='label', featuresCol='TFIDF', numTrees=20)
+
+# Create an ML pipeline for the random forest model
+rf_pipeline_default = Pipeline(stages=[label_indexer, rf_classifier_default])
+
+# Apply pipeline and train model
+rf_model_default = rf_pipeline_default.fit(train_tfidf)
+
+# Apply model on development data
+rf_predictions_default_dev = rf_model_default.transform(dev_tfidf)
+
+# Evaluate model using the AUC metric
+auc_rf_default_dev = evaluator.evaluate(rf_predictions_default_dev, {evaluator.metricName: 'areaUnderROC'})
+
+# Print result to standard output
+print('Random Forest, Default Parameters, Development Set, AUC:' + str(auc_rf_default_dev))
+
+# TODO: Check for signs of overfitting (by evaluating the model on the training set)
+# [FIX ME!] Write code below
+
+# TODO: Tune the random forest model by changing one of its hyperparameters
+# Build and evalute (on the dev set) another random forest with the following numTrees value: 100.
+# [FIX ME!] Write code below
+
+# ----- PART IV: MODEL EVALUATION -----
+
+# Create a new dataset combining the train and dev sets
+traindev_tfidf = unionAll(train_tfidf, dev_tfidf)
+
+# TODO: Evalute the best model on the test set
+# Build a new model from the concatenation of the train and dev sets in order to better utilize the data
+# [FIX ME!]
 
 
 
