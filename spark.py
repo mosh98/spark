@@ -183,17 +183,45 @@ auc_dt_default_train = evaluator.evaluate(training_data, {evaluator.metricName: 
 print('Decision Tree, Default Parameters, Training Set, AUC: ' + str(auc_dt_default_train))
 
 # TODO: Tune the decision tree model by changing one of its hyperparameters
-from pyspark.ml.tuning import ParamGridBuilder, CrossValidator
+dt_classifier_maxDepthThree = DecisionTreeClassifier(labelCol = 'label', featuresCol = 'TFIDF', maxDepth = 3)
+dt_classifer_maxDepthFour = DecisionTreeClassifier(labelCol = 'label', featuresCol = 'TFIDF', maxDepth = 4 )
+dt_pipeline_three = Pipeline( stages=[label_indexer, dt_classifier_maxDepthThree] )
+dt_pipeline_four = Pipeline( stages=[label_indexer, dt_classifer_maxDepthFour] )
+
+dt_model_three = dt_pipeline_three.fit(train_tfidf)
+dt_model_four = dt_pipeline_four.fit(train_tfidf)
+
+dt_predictions_three_dev = dt_model_three.transform(dev_tfidf)
+dt_predictions_four_dev = dt_model_four.transform(dev_tfidf)
+
+
+auc_dt_three_dev = evaluator.evaluate( dt_predictions_three_dev, {evaluator.metricName: 'areaUnderROC'} )
+auc_dt_four_dev = evaluator.evaluate( dt_predictions_four_dev, {evaluator.metricName: 'areaUnderROC'} )
+
+print('Decision Tree, MaxDepth 3, Development Set, AUC: ' + str(auc_dt_three_dev) )
+print('Decision Tree, MaxDepth 4, Development Set, AUC; ' + str(auc_dt_four_dev) )
+
+
+#from pyspark.ml.tuning import ParamGridBuilder, CrossValidator
 # Build and evalute decision trees with the following maxDepth values: 3 and 4.
 # [FIX ME!] Write code below
 # Train a decision tree with default parameters (including maxDepth=5)
 
-dt_classifier_default = DecisionTreeClassifier(labelCol='label', featuresCol='TFIDF', maxDepth= [3,4] )
+#dt_classifier_default = DecisionTreeClassifier(labelCol='label', featuresCol='TFIDF')
 
 # Create an ML pipeline for the decision tree model
-dt_pipeline_default = Pipeline(stages=[label_indexer, dt_classifier_default])
+#dt_pipeline_default = Pipeline( stages=[label_indexer, dt_classifier_default] )
 
-paramGrid = ParamGridBuilder().addGrid(dt_classifier_default.regParam, [3,4])
+#paramGrid = ParamGridBuilder().addGrid(dt_classifier_default.maxDepth, [3,4]).build()
+
+#crossval = CrossValidator(estimator=dt_pipeline_default,estimatorParamMaps=paramGrid,evaluator=evaluator, numFolds=3)
+
+#cvModel = crossval.fit(train_tfidf)
+
+#prediction = cvModel.transform(test_tfidf)
+#selected = prediction.select("class_label", "review","probability", "prediction")
+#for row in selected.collect():
+    #print(row)
 
 
 ###############################################################################
@@ -218,10 +246,37 @@ print('Random Forest, Default Parameters, Development Set, AUC:' + str(auc_rf_de
 
 # TODO: Check for signs of overfitting (by evaluating the model on the training set)
 # [FIX ME!] Write code below
+training_data_model = rf_model_default.transform(train_tfidf) #applying tdif
+
+auc_dt_default_train = evaluator.evaluate(training_data_model, {evaluator.metricName: 'areaUnderROC'} ) #evaluating on test set
+
+print('Random Forest, Default Parameters, Training Set, AUC: ' + str(auc_dt_default_train))
 
 # TODO: Tune the random forest model by changing one of its hyperparameters
 # Build and evalute (on the dev set) another random forest with the following numTrees value: 100.
 # [FIX ME!] Write code below
+
+
+# Train a random forest with default parameters (including numTrees=20)
+rf_classifier_default = RandomForestClassifier(labelCol='label', featuresCol='TFIDF', numTrees=100)
+
+# Create an ML pipeline for the random forest model
+rf_pipeline_default = Pipeline(stages=[label_indexer, rf_classifier_default])
+
+# Apply pipeline and train model
+rf_model_default = rf_pipeline_default.fit(train_tfidf)
+
+# Apply model on development data
+rf_predictions_default_dev = rf_model_default.transform(dev_tfidf)
+
+# Evaluate model using the AUC metric
+auc_rf_default_dev = evaluator.evaluate(rf_predictions_default_dev, {evaluator.metricName: 'areaUnderROC'})
+
+# Print result to standard output
+print('Random Forest, Parameters 100, Development Set, AUC:' + str(auc_rf_default_dev))
+
+
+
 
 # ----- PART IV: MODEL EVALUATION -----
 
@@ -231,6 +286,7 @@ traindev_tfidf = unionAll(train_tfidf, dev_tfidf)
 # TODO: Evalute the best model on the test set
 # Build a new model from the concatenation of the train and dev sets in order to better utilize the data
 # [FIX ME!]
+
 
 
 
