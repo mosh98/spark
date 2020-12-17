@@ -170,17 +170,33 @@ dt_model_default = dt_pipeline_default.fit(train_tfidf)
 dt_predictions_default_dev = dt_model_default.transform(dev_tfidf)
 
 # Evaluate model using the AUC metric
-auc_dt_default_dev = evaluator.evaluate(dt_predictions_default_dev, {evaluator.metricName: 'areaUnderROC'})
+auc_dt_default_dev = evaluator.evaluate(dt_predictions_default_dev, {evaluator.metricName: 'areaUnderROC'} )
 
 # Print result to standard output
 print('Decision Tree, Default Parameters, Development Set, AUC: ' + str(auc_dt_default_dev))
 
 # TODO: Check for signs of overfitting (by evaluating the model on the training set)
 # [FIX ME!] Write code below
+#TODO: Decision Tree
+training_data = dt_model_default.transform(train_tfidf) #applying tdif
+auc_dt_default_train = evaluator.evaluate(training_data, {evaluator.metricName: 'areaUnderROC'} ) #evaluating on test set
+print('Decision Tree, Default Parameters, Training Set, AUC: ' + str(auc_dt_default_train))
 
 # TODO: Tune the decision tree model by changing one of its hyperparameters
+from pyspark.ml.tuning import ParamGridBuilder, CrossValidator
 # Build and evalute decision trees with the following maxDepth values: 3 and 4.
 # [FIX ME!] Write code below
+# Train a decision tree with default parameters (including maxDepth=5)
+
+dt_classifier_default = DecisionTreeClassifier(labelCol='label', featuresCol='TFIDF', maxDepth= [3,4] )
+
+# Create an ML pipeline for the decision tree model
+dt_pipeline_default = Pipeline(stages=[label_indexer, dt_classifier_default])
+
+paramGrid = ParamGridBuilder().addGrid(dt_classifier_default.regParam, [3,4])
+
+
+###############################################################################
 
 # Train a random forest with default parameters (including numTrees=20)
 rf_classifier_default = RandomForestClassifier(labelCol='label', featuresCol='TFIDF', numTrees=20)
