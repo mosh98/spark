@@ -19,7 +19,8 @@ if __name__ == "__main__":
     sqlContext = SQLContext(sc)
 
 
-reviews = sc.wholeTextFiles('/Users/moslehmahamud/PycharmProjects/pythonProject/txt_sentoken/*/*')
+#reviews = sc.wholeTextFiles('/Users/moslehmahamud/PycharmProjects/pythonProject/txt_sentoken/*/*')
+reviews = sc.wholeTextFiles('hdfs://quickstart.cloudera:8020/user/cloudera/'+sys.argv[1]+'/*/*')
 print(type(reviews))
 
 #appending 0 and 1
@@ -277,6 +278,13 @@ traindev_tfidf = unionAll(train_tfidf, dev_tfidf)
 # TODO: Evalute the best model on the test set
 # Build a new model from the concatenation of the train and dev sets in order to better utilize the data
 # [FIX ME!]
+
+rf_classifier_hundred = RandomForestClassifier(labelCol = 'label', featuresCol = 'TFIDF', numTrees=100)
+rf_pipeline_hundred = Pipeline(stages=[label_indexer, rf_classifier_hundred])
+rf_model_hundred = rf_pipeline_hundred.fit(traindev_tfidf)
+rf_predictions_hundred_test = rf_model_hundred.transform(test_tfidf)
+auc_rf_hundred_test = evaluator.evaluate(rf_predictions_hundred_test, {evaluator.metricName: 'areaUnderROC'})
+print('Random Forest, With 100 trees, Test Set, AUC:' + str(auc_rf_hundred_test))
 
 
 
