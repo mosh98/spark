@@ -39,61 +39,57 @@ words_data = tokenizer.transform(dataset)
 # TODO: Count the number of instances in, respectively, train, dev and test
 # Print the counts to standard output
 # [FIX ME!] Write code below
-print(train.count())
-print(dev.count())
-print(test.count())
+print("")
+print("Instances:")
+print("Train: ", train.count())
+print("Development: ", dev.count())
+print("Test: ", test.count())
+print("")
 
 # TODO: Count the number of positive/negative instances in, respectively, train, dev and test
 # Print the class distribution for each to standard output
 # The class distribution should be specified as the % of positive examples
 # [FIX ME!] Write code below
 # from reducer import count
-print('positive/negative instances')
-print('Train instances')
 
+print("==================================")
+print('Number of positive/negative')
+print('Train')
 train.groupBy('class_label').count().show()
-result = train.filter(train.class_label == 1.0).collect()
-Train_postive = len(result)
-print("Train_postive ",Train_postive)
-result = train.filter(train.class_label == 0.0).collect()
-Train_negativ = len(result)
-print("Train_negativ ",Train_negativ)
+train_result_pos  = train.filter(train.class_label == 1.0).collect()
+train_pos = len(train_result_pos)
+train_result_neg = train.filter(train.class_label == 0.0).collect()
+train_neg = len(train_result_neg)
+print("Train positive percentage", train_pos/(train_pos+train_neg)*100)
+print("")
 
-print("Train percentage ",(Train_postive/(Train_postive+Train_negativ))*100)
-
-print('Dev instances')
+print('Development')
 dev.groupBy('class_label').count().show()
-dev_result = dev.filter(dev.class_label == 1.0).collect()
-dev_postive = len(dev_result)
-print("dev_postive ",dev_postive)
+dev_result_pos = dev.filter(dev.class_label == 1.0).collect()
+dev_pos = len(dev_result_pos)
+dev_result_neg = dev.filter(dev.class_label == 0.0).collect()
+dev_neg = len(dev_result_neg)
+print("Development positive percentage", dev_pos/(dev_pos+dev_neg)*100)
+print("")
 
-dev_result = dev.filter(dev.class_label == 0.0).collect()
-dev_negativ = len(dev_result)
-print("dev_negativ ",dev_negativ)
-
-print("Dev percentage ",(dev_postive/(dev_postive+dev_negativ))*100)
-
-
-print('Test instances')
+print('Test')
 test.groupBy('class_label').count().show()
-test_result = test.filter(test.class_label == 1.0).collect()
-test_positive = len(test_result)
-print("test_positive ",test_positive)
-test_result = test.filter(test.class_label == 0.0).collect()
-test_negativ = len(test_result)
-print("test_positive ",test_negativ)
-print("Test percentage ",(test_positive/(test_positive+test_negativ))*100)
+test_result_pos = test.filter(test.class_label == 1.0).collect()
+test_pos = len(test_result_pos)
+test_result_neg = test.filter(test.class_label == 0.0).collect()
+test_neg = len(test_result_neg)
+print("Test positive percentage", test_pos/(test_pos+test_neg)*100)
+print("")
 
-
-
+print("==================================")
 # TODO: Create a stopword list containing the 100 most frequent tokens in the training data
 # Hint: see below for how to convert a list of (word, frequency) tuples to a list of words
 # stopwords = [frequency_tuple[0] for frequency_tuple in list_top100_tokens]
 # [FIX ME!] Write code below
 train_words = train.select("words")
 
-freq = train_words.rdd.flatMap(lambda a: [(w, 1) for w in a.words]).reduceByKey(lambda a, b: a + b).sortBy(
-    lambda x: x[1], ascending=False)
+freq = train_words.rdd.flatMap(lambda a: [(w, 1) for w in a.words]).reduceByKey(lambda a, b: a + b).sortBy(lambda x: x[1], ascending=False)
+
 
 sizeOfWords = 0
 lzt = []
@@ -281,6 +277,7 @@ traindev_tfidf = unionAll(train_tfidf, dev_tfidf)
 # TODO: Evalute the best model on the test set
 # Build a new model from the concatenation of the train and dev sets in order to better utilize the data
 # [FIX ME!]
+
 
 
 
