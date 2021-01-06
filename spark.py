@@ -90,22 +90,18 @@ print("Test percentage ",(test_positive/(test_positive+test_negativ))*100)
 # Hint: see below for how to convert a list of (word, frequency) tuples to a list of words
 # stopwords = [frequency_tuple[0] for frequency_tuple in list_top100_tokens]
 # [FIX ME!] Write code below
-train.select("review").show()
-
-#train_word_counts = train.review.collect().flatMap(lambda line: line.split(" ")).map(lambda word: (word, 1)).reduceByKey(lambda a, b: a + b)
-
-#train_sorted_frequencies = sorted(train_word_counts.collect(), key=lambda x: x[1], reverse=True)
-#print(train_word_counts)
-
-#x = train_sorted_frequencies[:100]
-#stopwords = [frequency_tuple[0] for frequency_tuple in x]
-#print(stopwords)
-
 train_words = train.select("words")
 
-freq = train_words.rdd.flatMap(lambda a: [(w,1) for w in a.words]).reduceByKey(lambda a,b: a+b).sortBy(lambda x: x[1], ascending = False).take(100)
+freq = train_words.rdd.flatMap(lambda a: [(w, 1) for w in a.words]).reduceByKey(lambda a, b: a + b).sortBy(
+    lambda x: x[1], ascending=False)
 
-stopwords = freq
+sizeOfWords = 0
+lzt = []
+for x in freq.collect():
+    lzt.append(x[0])
+print("length of all the vocabulary before stopwrods = ", len(lzt))
+
+stopwords = freq.take(100)
 print(stopwords)
 newList = []
 for x in stopwords:
@@ -135,10 +131,9 @@ test_data = cv_model.transform(test_filtered)
 # TODO: Print the vocabulary size (to STDOUT) after filtering out stopwords and very rare tokens
 # Hint: Look at the parameters of CountVectorizer
 # [FIX ME!] Write code below
-print("without stopwords")
-print(train_data.count())
-print(dev_data.count())
-print(test_data.count())
+print("length of all the vocabulary after stopwrods = ", len(cv_model.vocabulary))
+
+
 
 # Create a TF-IDF representation of the data
 idf = IDF(inputCol='BoW', outputCol='TFIDF')
